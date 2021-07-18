@@ -9,6 +9,25 @@ from skimage.transform import FundamentalMatrixTransform, EssentialMatrixTransfo
 def add_ones(x):
     return np.concatenate([x, np.ones((x.shape[0], 1))], axis=1) 
 
+def extractorRt(E):
+    W = np.mat([
+        [0,-1,0],
+        [1, 0,0],
+        [0, 0,1]
+    ], dtype=float)
+    U, d, Vt = np.linalg.svd(E)
+    # print(d)
+    assert(np.linalg.det(U) > 0)
+    if np.linalg.det(Vt) < 0:
+        Vt *= -1
+    R = np.dot(np.dot(U, W), Vt)
+    if np.sum(R.diagonal()) < 0:
+        R = np.dot(np.dot(U, W.T), Vt)
+    t = U[:, 2]
+    pose = np.concatenate([R, t.reshape(3, 1)], axis=1)
+    return pose
+
+
 class Extractor(object):
     # GX = 16 // 2
     # GY = 12 // 2
@@ -65,6 +84,7 @@ class Extractor(object):
                     ret.append((kp1, kp2))
 
         # filter
+        Rt = None
         if len(ret) > 0:
             ret = np.array(ret)
             # print(ret.shape)
@@ -81,22 +101,11 @@ class Extractor(object):
                                     max_trials=100)
             # print(sum(inliers), len(inliers))
             ret = ret[inliers]
-            W = np.mat([
-                [0,-1,0],
-                [1, 0,0],
-                [0, 0,1]
-            ], dtype=float)
-            # print(model.params)
-            U, d, Vt = np.linalg.svd(model.params)
-            print(d)
-            # assert(np.linalg.det(U) > 0)
-            # if np.linalg.det(Vt) < 0:
-            #     Vt *= -1
-            # R = np.dot(np.dot(U, W), Vt)
-            # if np.sum(R.diagonal()) < 0:
-            #     R = np.dot(np.dot(U, W.T), Vt)
-            # t = U[:, 2]
+
+            Rt = extractorRt(model.params)
+            # print(pose)
+
 
         # return
         self.last = {'kps':kps, "des":des}
-        return ret
+        return ret, Rt

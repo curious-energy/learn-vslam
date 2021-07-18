@@ -23,8 +23,11 @@ fe = Extractor(K)
 def process_frame(img):
     img = cv2.resize(img, (W, H))
     # kp, des = orb.detectAndCompute(img,None)
-    matches = fe.extract(img)
+    matches, pose = fe.extract(img)
+    if pose is None:
+        pass
     print("%d matches" % len(matches))
+    print(pose)
 
 
 
