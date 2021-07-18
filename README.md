@@ -4,5 +4,5 @@ Learn slam by hand using python
 learn from [twitchslam](https://github.com/geohot/twitchslam)
 
 ```
-git总是要验证？？？
+验证问题！
 ```
