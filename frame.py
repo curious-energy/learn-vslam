@@ -49,7 +49,7 @@ def denormalize(K, pt):
 def extractor(img):
     orb = cv2.ORB_create()
     # detection
-    pts = cv2.goodFeaturesToTrack(np.mean(img, axis=2).astype(np.uint8), 3000, qualityLevel=0.01, minDistance=3)
+    pts = cv2.goodFeaturesToTrack(np.mean(img, axis=2).astype(np.uint8), 1000, qualityLevel=0.01, minDistance=10)
 
     # extraction
     kps = [cv2.KeyPoint(x=f[0][0], y=f[0][1], _size=20) for f in pts]
@@ -72,13 +72,14 @@ def match_frames(f1, f2):
 
     for m, n in matches:
         if m.distance < 0.75*n.distance:
-            # 保留索引
-            idx1.append(m.queryIdx)
-            idx2.append(m.trainIdx)
-
             p1 = f1.pts[m.queryIdx]
             p2 = f2.pts[m.trainIdx]
-            ret.append((p1, p2))
+
+            if np.linalg.norm((p1-p2)) < 0.1:
+                # 保留索引
+                idx1.append(m.queryIdx)
+                idx2.append(m.trainIdx)
+                ret.append((p1, p2))
 
     assert len(ret) >= 8
     ret = np.array(ret)
@@ -93,7 +94,7 @@ def match_frames(f1, f2):
                             residual_threshold=0.005,
                             max_trials=100)
     # 查看ransac过滤效果
-    print(sum(inliers), len(inliers))
+    # print(sum(inliers), len(inliers))
 
     # ignore outliers
     # ret = ret[inliers]

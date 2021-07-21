@@ -13,7 +13,8 @@ from mapp import Map, Point
 W, H = 1920 // 2, 1080 // 2
 
 # 相机内参
-F = 270
+F = 800
+# F = 270
 K = np.array([
     [F, 0, W//2],
     [0, F, H//2],
@@ -91,7 +92,7 @@ def process_frame(img):
 
 
 if __name__ == "__main__":
-    cap = cv2.VideoCapture("./test.mp4")
+    cap = cv2.VideoCapture("./test_ohio.mp4")
 
     while cap.isOpened():
         ret, frame = cap.read()
