@@ -6,8 +6,11 @@ import numpy as np
 from frame import Frame, denormalize, match_frames, IRt
 import g2o
 
+
+
 # 设定画面大小
 W, H = 1920 // 2, 1080 // 2
+
 # 相机内参
 F = 270
 K = np.array([
@@ -21,6 +24,20 @@ class Map(object):
     def __init__(self):
         self.frames = []
         self.points = []
+
+    def viewer_thread(self):
+        import OpenGL.GL as gl
+        import pangolin
+        
+        pangolin.CreateWindowAndBind('Main', 640, 480)
+        gl.glEnable(gl.GL_DEPTH_TEST)
+
+        # Define Projection and initial ModelView matrix
+        scam = pangolin.OpenGlRenderState(
+            pangolin.ProjectionMatrix(640, 480, 420, 420, 320, 240, 0.2, 100),
+            pangolin.ModelViewLookAt(-2, 2, -2, 0, 0, 0, pangolin.AxisDirection.AxisY))
+        handler = pangolin.Handler3D(scam)
+
 
     def display(self):
         for f in self.frames:
