@@ -93,7 +93,7 @@ def match_frames(f1, f2):
                             residual_threshold=0.005,
                             max_trials=100)
     # 查看ransac过滤效果
-    # print(sum(inliers), len(inliers))
+    print(sum(inliers), len(inliers))
 
     # ignore outliers
     # ret = ret[inliers]
