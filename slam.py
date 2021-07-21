@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 import cv2
-from pygame.constants import NOEVENT
-from display import Display2D
+# from pygame.constants import NOEVENT
+# from display import Display2D
 import numpy as np
 from frame import Frame, denormalize, match_frames, IRt
 import g2o
 
-
+import OpenGL.GL as gl
+import pangolin
 
 # 设定画面大小
 W, H = 1920 // 2, 1080 // 2
@@ -19,33 +20,71 @@ K = np.array([
     [0, 0, 1]
 ])
 
+from multiprocessing import Process, Queue
 
 class Map(object):
     def __init__(self):
         self.frames = []
         self.points = []
+        # self.viewer_init()
+        self.state = None
 
-    def viewer_thread(self):
-        import OpenGL.GL as gl
-        import pangolin
-        
+        self.q = Queue()
+        p = Process(target=self.viewer_thread, args=(self.q,))
+        p.daemon = True
+        p.start()
+
+
+    def viewer_thread(self, q):
+        self.viewer_init()
+        while 1:
+            self.viewer_refresh(q)
+
+    def viewer_init(self):
         pangolin.CreateWindowAndBind('Main', 640, 480)
         gl.glEnable(gl.GL_DEPTH_TEST)
 
         # Define Projection and initial ModelView matrix
-        scam = pangolin.OpenGlRenderState(
+        self.scam = pangolin.OpenGlRenderState(
             pangolin.ProjectionMatrix(640, 480, 420, 420, 320, 240, 0.2, 100),
             pangolin.ModelViewLookAt(-2, 2, -2, 0, 0, 0, pangolin.AxisDirection.AxisY))
-        handler = pangolin.Handler3D(scam)
+        handler = pangolin.Handler3D(self.scam)
+
+        # Create Interactive View in window
+        self.dcam = pangolin.CreateDisplay()
+        self.dcam.SetBounds(0.0, 1.0, 0.0, 1.0, -640.0/480.0)
+        self.dcam.SetHandler(handler)
+
+    def viewer_refresh(self, q):
+        if self.state is None or not q.empty():
+            self.state = q.get()
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gl.glClearColor(1.0, 1.0, 1.0, 1.0)
+        self.dcam.Activate(self.scam)
+
+        gl.glPointSize(10)
+        gl.glColor3f(0.0, 1.0, 0.0)
+        pangolin.DrawPoints(np.array([d[:3, 3] for d in self.state[0]]))
+
+        gl.glPointSize(3)
+        gl.glColor3f(1.0, 0.0, 0.0)
+        pangolin.DrawPoints(np.array(self.state[1]))
+
+        pangolin.FinishFrame()
 
 
     def display(self):
+        poses, pts = [], []
         for f in self.frames:
-            print(f.id)
-            print(f.pose)
-            print()
+            poses.append(f.pose)
+        for p in self.points:
+            pts.append(p.pt)
+        self.q.put((poses, pts))
+        # self.state = poses, pts
+        # self.viewer_refresh()
+        
 
-disp = Display2D(W, H)
+# disp = Display2D(W, H)
 mapp = Map()
 
 class Point(object):
@@ -55,7 +94,7 @@ class Point(object):
     '''
     def __init__(self, mapp, loc):
         self.frames = []
-        self.xyz = loc
+        self.pt = loc
         self.idxs = []
         mapp.points.append(self)
 
@@ -68,7 +107,7 @@ def triangulate(pose1, pose2, pts1, pts2):
     return cv2.triangulatePoints(pose1[:3,:], pose2[:3,:], pts1.T, pts2.T).T
 
 
-frames = []
+# frames = []
 def process_frame(img):
     img = cv2.resize(img, (W, H))
     frame = Frame(mapp, img, K)
@@ -111,7 +150,7 @@ def process_frame(img):
         # cv2.circle(img, (u2, v2), color=(255, 0, 0), radius=3)
         cv2.line(img, (u1, v1), (u2, v2), color=(0, 0, 255))
 
-    disp.paint(img)
+    # disp.paint(img)
     mapp.display()
 
 
