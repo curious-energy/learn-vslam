@@ -46,7 +46,6 @@ def denormalize(K, pt):
     # print("ret",ret)
     return int(round(ret[0])), int(round(ret[1]))
 
-
 def extractor(img):
     orb = cv2.ORB_create()
     # detection
@@ -106,10 +105,13 @@ def match_frames(f1, f2):
 
 
 class Frame(object):
-    def __init__(self, img, K):
+    def __init__(self, mapp, img, K):
         self.K = K
         self.invK = np.linalg.inv(K)
         self.pose = IRt
 
         pts, self.des = extractor(img)
         self.pts = normalize(self.invK, pts)
+
+        self.id = len(mapp.frames)
+        mapp.frames.append(self)
