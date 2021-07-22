@@ -24,6 +24,10 @@ K = np.array([
 disp = Display2D(W, H) if os.getenv("D2D") is not None else None
 mapp = Map()
 
+# if os.getenv("D3D") is not None:
+#     mapp.create_
+
+
 def triangulate(pose1, pose2, pts1, pts2):
     ret = np.zeros((pts1.shape[0], 4))
     pose1 = np.linalg.inv(pose1)
@@ -55,15 +59,21 @@ def process_frame(img):
     idx1, idx2, Rt = match_frames(f1, f2)
     f1.pose = np.dot(Rt, f2.pose)
     # print(Rt[:3,:])
+    for i in range(len(f2.pts)):
+        if f2.pts[i] is not None:
+            f2.pts
     
     # pts4d = cv2.triangulatePoints(IRt[:3,:], Rt[:3,:], pts[:,0].T, pts[:,1].T).T
-    pts4d = triangulate(f1.pose, f2.pose, f1.pts[idx1], f2.pts[idx2])
+    pts4d = triangulate(f1.pose, f2.pose, f1.kps[idx1], f2.kps[idx2])
     # print(pts4d)
     # homogenous 3-D coords
     pts4d /= pts4d[:, 3:]
 
+    ummatched_points = np.array([f1.pts[i] is None for i in idx1]).astype(np.bool)
+    print(np.all(ummatched_points))
     # reject pts without enough "parallax" and points behind the camera : z > 0
-    good_pts4d = (np.abs(pts4d[:, 3]) > .001) & (pts4d[:, 2] > 0)
+    good_pts4d = (np.abs(pts4d[:, 3]) > .001) & (pts4d[:, 2] > 0)  & ummatched_points
+               
     # print(sum(good_pts4d), len(good_pts4d))
     # pts4d = pts4d[good_pts4d]
 
@@ -74,7 +84,7 @@ def process_frame(img):
         pt.add_observation(f1, idx1[i])
         pt.add_observation(f2, idx2[i])
 
-    for pt1, pt2 in zip(f1.pts[idx1], f2.pts[idx2]):
+    for pt1, pt2 in zip(f1.kps[idx1], f2.kps[idx2]):
         u1, v1 = denormalize(K, pt1)
         u2, v2 = denormalize(K, pt2)
 

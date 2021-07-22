@@ -37,8 +37,8 @@ def extractorRt(E):
     # print(ret)
     return ret
 
-def normalize(invK, pts):
-    return np.dot(invK, add_ones(pts).T).T[:, 0:2]
+def normalize(invK, kps):
+    return np.dot(invK, add_ones(kps).T).T[:, 0:2]
 
 def denormalize(K, pt):
     ret = np.dot(K, np.array([pt[0], pt[1], 1.0]).T)
@@ -49,13 +49,13 @@ def denormalize(K, pt):
 def extractor(img):
     orb = cv2.ORB_create()
     # detection
-    pts = cv2.goodFeaturesToTrack(np.mean(img, axis=2).astype(np.uint8), 1000, qualityLevel=0.01, minDistance=10)
+    kps = cv2.goodFeaturesToTrack(np.mean(img, axis=2).astype(np.uint8), 1000, qualityLevel=0.01, minDistance=10)
 
     # extraction
-    kps = [cv2.KeyPoint(x=f[0][0], y=f[0][1], _size=20) for f in pts]
+    kps = [cv2.KeyPoint(x=f[0][0], y=f[0][1], _size=20) for f in kps]
     kps, des = orb.compute(img, kps)
 
-    # return pts and des
+    # return kps and des
     return np.array([(kp.pt[0], kp.pt[1]) for kp in kps]), des
         
 
@@ -72,10 +72,11 @@ def match_frames(f1, f2):
 
     for m, n in matches:
         if m.distance < 0.75*n.distance:
-            p1 = f1.pts[m.queryIdx]
-            p2 = f2.pts[m.trainIdx]
+            p1 = f1.kps[m.queryIdx]
+            p2 = f2.kps[m.trainIdx]
 
-            if np.linalg.norm((p1-p2)) < 0.1:
+            # if np.linalg.norm((p1-p2)) < 0.1:
+            if m.distance < 32:
                 # 保留索引
                 idx1.append(m.queryIdx)
                 idx2.append(m.trainIdx)
@@ -88,8 +89,8 @@ def match_frames(f1, f2):
 
     # fit matrix
     model, inliers = ransac((ret[:,0], ret[:,1]),
-                            EssentialMatrixTransform,
-                            # FundamentalMatrixTransform,
+                            # EssentialMatrixTransform,
+                            FundamentalMatrixTransform,
                             min_samples=8,
                             residual_threshold=0.005,
                             max_trials=100)
@@ -110,9 +111,11 @@ class Frame(object):
         self.K = K
         self.invK = np.linalg.inv(K)
         self.pose = IRt
+        self.h, self.w = img.shape[0:2]
 
-        pts, self.des = extractor(img)
-        self.pts = normalize(self.invK, pts)
+        kps, self.des = extractor(img)
+        self.kps = normalize(self.invK, kps)
+        self.pts = [None]*len(self.kps)
 
         self.id = len(mapp.frames)
         mapp.frames.append(self)

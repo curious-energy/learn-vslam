@@ -9,7 +9,7 @@ learn from [twitchslam](https://github.com/geohot/twitchslam)
 - opencv
 - pygame
 - g2o
-- pangolin (暂定可选)
+- pangolin
 - pyopengl
 - scikit-image
 - numpy
