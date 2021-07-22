@@ -107,7 +107,7 @@ def process_frame(img):
 
 
 if __name__ == "__main__":
-    cap = cv2.VideoCapture("./test_ohio.mp4")
+    cap = cv2.VideoCapture("./test_road.mp4")
 
     while cap.isOpened():
         ret, frame = cap.read()
