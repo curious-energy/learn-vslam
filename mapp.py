@@ -60,18 +60,21 @@ class Map(object):
         # draw keypoints
         gl.glPointSize(5)
         gl.glColor3f(1.0, 0.0, 0.0)
-        pangolin.DrawPoints(np.array(self.state[1]))
+        pangolin.DrawPoints(self.state[1], self.state[2])
 
         pangolin.FinishFrame()
 
 
     def display(self):
-        poses, pts = [], []
+        poses, pts, colors = [], [], []
         for f in self.frames:
             poses.append(f.pose)
         for p in self.points:
             pts.append(p.pt)
-        self.q.put((poses, pts))
+            colors.append(p.color)
+        
+        # print(colors)
+        self.q.put((np.array(poses), np.array(pts), np.array(colors)/256.0))
 
     # add g2o optimizer
     def optimize(self):
@@ -148,10 +151,11 @@ class Point(object):
     A Point is a 3-D point in the world
     Each Point is observed in multiple Frames
     '''
-    def __init__(self, mapp, loc):
+    def __init__(self, mapp, loc, color):
         self.pt = loc
         self.frames = []
         self.idxs = []
+        self.color = np.copy(color)
 
         self.id = len(mapp.points)
         mapp.points.append(self)
