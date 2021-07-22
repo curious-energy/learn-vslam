@@ -77,10 +77,15 @@ def match_frames(f1, f2):
 
             # if np.linalg.norm((p1-p2)) < 0.1:
             if m.distance < 32:
-                # 保留索引
-                idx1.append(m.queryIdx)
-                idx2.append(m.trainIdx)
-                ret.append((p1, p2))
+                if m.queryIdx not in idx1 and m.trainIdx not in idx2:
+                    # 保留索引
+                    idx1.append(m.queryIdx)
+                    idx2.append(m.trainIdx)
+
+                    ret.append((p1, p2))
+
+    assert(len(set(idx1)) == len(idx1))
+    assert(len(set(idx2)) == len(idx2))
 
     assert len(ret) >= 8
     ret = np.array(ret)

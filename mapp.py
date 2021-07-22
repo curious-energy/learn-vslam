@@ -2,6 +2,7 @@ from multiprocessing import Process, Queue
 import OpenGL.GL as gl
 import pangolin
 import numpy as np
+import g2o
 
 class Map(object):
     def __init__(self):
@@ -14,7 +15,49 @@ class Map(object):
         p.daemon = True
         p.start()
 
+    # add g2o optimizer
+    def optimize(self):
+        
+        # 创建 g2o optimizer
+        opt = g2o.SparseOptimizer()
+        solver = g2o.BlockSolverSE3(g2o.LinearSolverCholmodSE3())
+        solver = g2o.OptimizationAlgorithmLevenberg(solver)
+        opt.set_algorithm(solver)
 
+        robust_kernel = g2o.RobustKernelHuber(np.sqrt(5.991))
+
+        # add frames to graph
+        for f in self.frames:
+            v_se3 = g2o.VertexSE3Expmap()
+            v_se3.set_id(f.id)
+            v_se3.set_estimate(g2o.SE3Quat(f.pose[0:3, 0:3], f.pose[3, 0:3]))
+            v_se3.set_fixed(f.id == 0)
+            opt.add_vertex(v_se3)
+
+        # add points to frames
+        for p in self.points:
+            pt = g2o.VertexSBAPointXYZ()
+            pt.set_id(p.id + 0x10000)
+            pt.set_estimate(p.pt[0:3])
+            pt.set_marginalized(True)
+            opt.add_vertex(pt)
+
+
+        for f in p.frames:
+            edge = g2o.EdgeSE3ProjectXYZ()
+            edge.set_vertex(0, pt)
+            edge.set_vertex(1, opt.vertex(f.id))
+            edge.set_measurement(f.kps[f.pts.index(p)])
+            edge.set_information(np.eye(2))
+            edge.set_robust_kernel(robust_kernel)
+            opt.add_edge(edge)
+
+        # 初始化
+        opt.initialize_optimization()
+        opt.set_verbose(True)
+        opt.optimize(20)
+
+    # 可视化
     def viewer_thread(self, q):
         self.viewer_init(1024, 768)
         while 1:
@@ -78,9 +121,13 @@ class Point(object):
         self.frames = []
         self.pt = loc
         self.idxs = []
+
+        self.id = len(mapp.points)
         mapp.points.append(self)
 
     def add_observation(self, frame, idx):
         frame.pts[idx] = self
         self.frames.append(frame)
         self.idxs.append(idx)
+        
+        

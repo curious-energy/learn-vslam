@@ -4,7 +4,6 @@ from pygame import draw
 from display import Display2D
 import numpy as np
 from frame import Frame, denormalize, match_frames, IRt
-import g2o
 import os
 
 from mapp import Map, Point
@@ -99,6 +98,9 @@ def process_frame(img):
         # 2D-display
         disp.paint(img)
     
+    # optimize
+    if frame.id >3:
+        mapp.optimize()
     # 3D-display
     mapp.display()
 
