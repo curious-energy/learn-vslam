@@ -1,8 +1,11 @@
 from multiprocessing import Process, Queue
+
+from operator import pos
 import OpenGL.GL as gl
 import pangolin
 import numpy as np
 import g2o
+from frame import poseRt
 
 class Map(object):
     def __init__(self):
@@ -83,8 +86,10 @@ class Map(object):
 
         # add frames to graph
         for f in self.frames:
+            pose = f.pose
             sbacam = g2o.SBACam(g2o.SE3Quat(f.pose[0:3, 0:3], f.pose[3, 0:3]))
-            sbacam.set_cam(f.K[0][0], f.K[1][1], f.K[2][0], f.K[2][1], 1.0)
+            # sbacam.set_cam(f.K[0][0], f.K[1][1], f.K[2][0], f.K[2][1], 1.0)
+            sbacam.set_cam(1.0, 1.0, 0.0, 0.0, 1.0)
 
             v_se3 = g2o.VertexCam()
             v_se3.set_id(f.id)
@@ -93,9 +98,10 @@ class Map(object):
             opt.add_vertex(v_se3)
 
         # add points to frames
+        PT_ID_OFFSET = 0x10000
         for p in self.points:
             pt = g2o.VertexSBAPointXYZ()
-            pt.set_id(p.id + 0x10000)
+            pt.set_id(p.id + PT_ID_OFFSET)
             pt.set_estimate(p.pt[0:3])
             pt.set_marginalized(True)
             pt.set_fixed(False)
@@ -118,7 +124,22 @@ class Map(object):
         opt.set_verbose(True)
 
         opt.initialize_optimization()
-        opt.optimize(20)
+        opt.optimize(10)
+
+        # put frame back
+        for f in self.frames:
+            est = opt.vertex(f.id).estimate()
+            R = est.rotation().matrix()
+            t = est.translation()
+            # print(R, t)
+            f.pose = poseRt(R, t)
+
+        # put points back
+        for p in self.points:
+            est = opt.vertex(p.id + PT_ID_OFFSET).estimate()
+            # print(est)
+            p.pt = np.array(est)
+
 
 
 class Point(object):

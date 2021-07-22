@@ -7,11 +7,16 @@ from skimage.measure import ransac
 from skimage.transform import FundamentalMatrixTransform, EssentialMatrixTransform
 
 
-IRt = np.eye(4)
-
 # 给向量的后加一列 [[x,y]] -> [[x,y,1]]
 def add_ones(x):
     return np.concatenate([x, np.ones((x.shape[0], 1))], axis=1) 
+
+def poseRt(R, t):
+    ret = np.eye(4)
+    ret[:3,:3] = R
+    ret[:3, 3] = t
+    # print(ret)
+    return ret
 
 # pose
 def extractorRt(E):
@@ -31,11 +36,7 @@ def extractorRt(E):
         R = np.dot(np.dot(U, W.T), Vt)
     t = U[:, 2]
     # pose = np.concatenate([R, t.reshape(3, 1)], axis=1)
-    ret = np.eye(4)
-    ret[:3,:3] = R
-    ret[:3, 3] = t
-    # print(ret)
-    return ret
+    return poseRt(R, t)
 
 def normalize(invK, kps):
     return np.dot(invK, add_ones(kps).T).T[:, 0:2]
@@ -118,7 +119,7 @@ class Frame(object):
     def __init__(self, mapp, img, K):
         self.K = K
         self.invK = np.linalg.inv(K)
-        self.pose = IRt
+        self.pose = np.eye(4)
         self.h, self.w = img.shape[0:2]
 
         kps, self.des = extractor(img)

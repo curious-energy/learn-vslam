@@ -2,7 +2,7 @@
 import cv2
 from display import Display2D
 import numpy as np
-from frame import Frame, denormalize, match_frames, IRt
+from frame import Frame, denormalize, match_frames
 import os
 
 from mapp import Map, Point
@@ -11,7 +11,7 @@ from mapp import Map, Point
 W, H = 1920 // 2, 1080 // 2
 
 # 相机内参
-F = 800
+F = 700
 # F = 270
 K = np.array([
     [F, 0, W//2],
@@ -73,7 +73,6 @@ def process_frame(img):
     print("Adding: %d points" % np.sum(ummatched_points))
     # reject pts without enough "parallax" and points behind the camera : z > 0
     good_pts4d = (np.abs(pts4d[:, 3]) > .005) & (pts4d[:, 2] > 0) & ummatched_points
-               
     # print(sum(good_pts4d), len(good_pts4d))
     # pts4d = pts4d[good_pts4d]
 
@@ -100,6 +99,7 @@ def process_frame(img):
     # optimize
     if frame.id >= 4:
         mapp.optimize()
+        # exit(0)
     # 3D-display
     mapp.display()
 
