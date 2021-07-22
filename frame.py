@@ -97,6 +97,9 @@ def match_frames(f1, f2):
     # 查看ransac过滤效果
     # print(sum(inliers), len(inliers))
 
+    # 输出匹配结果
+    print("Matches: %d -> %d -> %d -> %d" % (len(f1.des), len(matches), len(inliers), sum(inliers)))
+
     # ignore outliers
     # ret = ret[inliers]
     Rt = extractorRt(model.params)

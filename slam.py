@@ -52,6 +52,7 @@ def process_frame(img):
 
     if frame.id == 0:
         return
+    print("\n**** frame id %d ****" % (frame.id, ))
     
     f1 = mapp.frames[-1]
     f2 = mapp.frames[-2]
@@ -59,9 +60,10 @@ def process_frame(img):
     idx1, idx2, Rt = match_frames(f1, f2)
     f1.pose = np.dot(Rt, f2.pose)
     # print(Rt[:3,:])
-    for i in range(len(f2.pts)):
-        if f2.pts[i] is not None:
-            f2.pts
+    # print(idx2)
+    for i, idx in enumerate(idx2):
+        if f2.pts[idx] is not None:
+            f2.pts[idx].add_observation(f1, idx1[i])
     
     # pts4d = cv2.triangulatePoints(IRt[:3,:], Rt[:3,:], pts[:,0].T, pts[:,1].T).T
     pts4d = triangulate(f1.pose, f2.pose, f1.kps[idx1], f2.kps[idx2])
@@ -69,10 +71,10 @@ def process_frame(img):
     # homogenous 3-D coords
     pts4d /= pts4d[:, 3:]
 
-    ummatched_points = np.array([f1.pts[i] is None for i in idx1]).astype(np.bool)
-    print(np.all(ummatched_points))
+    ummatched_points = np.array([f1.pts[i] is None for i in idx1])
+    print("Adding: %d points" % np.sum(ummatched_points))
     # reject pts without enough "parallax" and points behind the camera : z > 0
-    good_pts4d = (np.abs(pts4d[:, 3]) > .001) & (pts4d[:, 2] > 0)  & ummatched_points
+    good_pts4d = (np.abs(pts4d[:, 3]) > .001) & (pts4d[:, 2] > 0) & ummatched_points
                
     # print(sum(good_pts4d), len(good_pts4d))
     # pts4d = pts4d[good_pts4d]
