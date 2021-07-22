@@ -122,8 +122,8 @@ class Frame(object):
         self.pose = np.eye(4)
         self.h, self.w = img.shape[0:2]
 
-        kps, self.des = extractor(img)
-        self.kps = normalize(self.invK, kps)
+        self.kpus, self.des = extractor(img)
+        self.kps = normalize(self.invK, self.kpus)
         self.pts = [None]*len(self.kps)
 
         self.id = len(mapp.frames)
