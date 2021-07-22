@@ -28,9 +28,11 @@ def extractorRt(E):
     # svd分解
     U, d, Vt = np.linalg.svd(E)
     # print(d)
-    assert(np.linalg.det(U) > 0)
+    # assert(np.linalg.det(U) > 0)
+    if np.linalg.det(U) < 0:
+        U *= -1.0
     if np.linalg.det(Vt) < 0:
-        Vt *= -1
+        Vt *= -1.0
     R = np.dot(np.dot(U, W), Vt)
     if np.sum(R.diagonal()) < 0:
         R = np.dot(np.dot(U, W.T), Vt)

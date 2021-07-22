@@ -58,7 +58,7 @@ class Map(object):
         pangolin.DrawCameras(self.state[0])
         
         # draw keypoints
-        gl.glPointSize(3)
+        gl.glPointSize(5)
         gl.glColor3f(1.0, 0.0, 0.0)
         pangolin.DrawPoints(np.array(self.state[1]))
 
@@ -88,14 +88,14 @@ class Map(object):
         for f in self.frames:
             pose = f.pose
             sbacam = g2o.SBACam(g2o.SE3Quat(pose[0:3, 0:3], pose[3, 0:3]))
-            print(f.K[0][0], f.K[1][1], f.K[0][2], f.K[1][2])
+            # print(f.K[0][0], f.K[1][1], f.K[0][2], f.K[1][2])
             sbacam.set_cam(f.K[0][0], f.K[1][1], f.K[0][2], f.K[1][2], 1.0)
             # sbacam.set_cam(1.0, 1.0, 0.0, 0.0, 1.0)
 
             v_se3 = g2o.VertexCam()
             v_se3.set_id(f.id)
             v_se3.set_estimate(sbacam)
-            v_se3.set_fixed(f.id == 0) # 固定起始帧
+            v_se3.set_fixed(f.id <= 1) # 固定起始帧
             opt.add_vertex(v_se3)
 
         # add points to frames
@@ -125,7 +125,7 @@ class Map(object):
         opt.set_verbose(True)
 
         opt.initialize_optimization()
-        opt.optimize(10)
+        opt.optimize(20)
 
         # put frame back
         for f in self.frames:
