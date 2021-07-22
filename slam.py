@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import cv2
-from pygame import draw
 from display import Display2D
 import numpy as np
 from frame import Frame, denormalize, match_frames, IRt
@@ -73,7 +72,7 @@ def process_frame(img):
     ummatched_points = np.array([f1.pts[i] is None for i in idx1])
     print("Adding: %d points" % np.sum(ummatched_points))
     # reject pts without enough "parallax" and points behind the camera : z > 0
-    good_pts4d = (np.abs(pts4d[:, 3]) > .001) & (pts4d[:, 2] > 0) & ummatched_points
+    good_pts4d = (np.abs(pts4d[:, 3]) > .005) & (pts4d[:, 2] > 0) & ummatched_points
                
     # print(sum(good_pts4d), len(good_pts4d))
     # pts4d = pts4d[good_pts4d]
@@ -99,7 +98,7 @@ def process_frame(img):
         disp.paint(img)
     
     # optimize
-    if frame.id >3:
+    if frame.id >= 4:
         mapp.optimize()
     # 3D-display
     mapp.display()

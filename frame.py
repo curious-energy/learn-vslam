@@ -57,7 +57,7 @@ def extractor(img):
 
     # return kps and des
     return np.array([(kp.pt[0], kp.pt[1]) for kp in kps]), des
-        
+
 
 def match_frames(f1, f2):
     bf = cv2.BFMatcher(cv2.NORM_HAMMING)
@@ -97,7 +97,7 @@ def match_frames(f1, f2):
                             # EssentialMatrixTransform,
                             FundamentalMatrixTransform,
                             min_samples=8,
-                            residual_threshold=0.005,
+                            residual_threshold=0.001,
                             max_trials=100)
     # 查看ransac过滤效果
     # print(sum(inliers), len(inliers))
